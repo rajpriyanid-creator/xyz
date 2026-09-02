@@ -1,0 +1,6 @@
+{
+  "name": "CreatorOS",
+  "description": "Autonomous AI creator-operations engine that analyzes source content, plans workflows, compiles multi-platform assets, verifies factual integrity with ProofFlow, and automates channel publishing.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
