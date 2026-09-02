@@ -1,12 +1,20 @@
 # CreatorOS — Autonomous Multi-Modal Content Engine & ProofFlow Quality Gate
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](https://opensource.org/licenses/MIT)
+[![Hackathon: AI Content Engine Hacks](https://img.shields.io/badge/Hackathon-AI%20Content%20Engine%20Hacks-FF6154.svg)](https://ai-content-engine-hacks.devpost.com/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-xyz--sepia--nu.vercel.app-00dfa2.svg)](https://xyz-sepia-nu.vercel.app/)
 [![Powered by Gemini](https://img.shields.io/badge/Powered%20By-Google%20Gemini%203.7%20Flash-purple.svg)](https://ai.google.dev/)
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript%205.0-blue.svg)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Tailwind%20CSS-cyan.svg)](https://reactjs.org/)
-[![Platform](https://img.shields.io/badge/Deployment-Cloud%20Run%20%7C%20Vercel-black.svg)](https://vercel.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](https://opensource.org/licenses/MIT)
 
-> **CreatorOS** is an autonomous content operating system that decomposes raw technical recordings and transcripts into an Intermediate Representation (Content IR) and compiles verified, platform-native assets with surgical factual integrity.
+> **CreatorOS** was built specifically for the [**AI Content Engine Hacks**](https://ai-content-engine-hacks.devpost.com/) hackathon on Devpost.
+> It is an autonomous content operating system that decomposes raw technical recordings and transcripts into an Intermediate Representation (Content IR) and compiles verified, platform-native assets with surgical factual integrity.
+
+---
+
+## 🔗 Live Application Links
+
+- 🌐 **Production Deployment (Vercel)**: [https://xyz-sepia-nu.vercel.app/](https://xyz-sepia-nu.vercel.app/)
+- 🏆 **Hackathon Page**: [AI Content Engine Hacks on Devpost](https://ai-content-engine-hacks.devpost.com/)
 
 ---
 
@@ -95,7 +103,7 @@ Where:
 
 ## 🛠️ Tech Stack
 
-- **AI & LLM Orchestration**: Google Gemini 3.7 Flash (`@google/genai` TypeScript SDK)
+- **AI & LLM Orchestration**: Google Gemini 3.7 Flash (`@google/genai` TypeScript SDK) with fallback cascade
 - **Frontend**: React 18, TypeScript, Tailwind CSS, Lucide React, Motion
 - **Backend & API**: Express.js, Node.js, Vercel Serverless Functions
 - **Caching & Rate Limiting**: In-memory response cache & sliding-window serverless rate limiter
@@ -137,7 +145,10 @@ Where:
 
 ## ☁️ Deployment
 
-### Deploying to Vercel
+### Live Deployment on Vercel
+- **Production URL**: [https://xyz-sepia-nu.vercel.app/](https://xyz-sepia-nu.vercel.app/)
+
+### Deploying Your Own Instance
 1. Push this repository to GitHub.
 2. Import the project into your [Vercel Dashboard](https://vercel.com).
 3. In **Project Settings → Environment Variables**, add:
@@ -146,10 +157,12 @@ Where:
 
 ---
 
-## 👥 Hackathon Submission Details
+## 🏆 Hackathon Submission Details
 
+- **Hackathon**: [AI Content Engine Hacks](https://ai-content-engine-hacks.devpost.com/)
 - **Project Name**: CreatorOS: Autonomous Content Engine & ProofFlow Gate
-- **Category**: Generative AI, Developer Tools & Productivity, Cloud Automation
+- **Live Demo Link**: [https://xyz-sepia-nu.vercel.app/](https://xyz-sepia-nu.vercel.app/)
+- **Category**: Generative AI, Developer Tools & Productivity, Content Automation
 - **Target Audience**: Technical Content Creators, Developer Advocates, Engineering Educators
 
 ---
