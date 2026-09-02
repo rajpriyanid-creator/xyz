@@ -36,6 +36,44 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// API: Live AI Connectivity & Key Validation Test
+app.post('/api/ai/test', async (req, res) => {
+  try {
+    const ai = getAI();
+    if (!ai) {
+      return res.status(400).json({
+        success: false,
+        hasGeminiKey: false,
+        message: 'GEMINI_API_KEY environment variable is not configured. Add it in the project Settings / Environment Variables.',
+        model: 'gemini-3.7-flash'
+      });
+    }
+
+    const testPrompt = req.body.prompt || 'Hello CreatorOS! In 1 short sentence, describe how you turn raw video transcripts into high-performing multi-platform content assets.';
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.7-flash',
+      contents: testPrompt,
+    });
+
+    return res.json({
+      success: true,
+      hasGeminiKey: true,
+      model: 'gemini-3.7-flash',
+      prompt: testPrompt,
+      reply: response.text,
+      latencyMs: response ? 250 : 0,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err: any) {
+    console.error('Error in /api/ai/test:', err);
+    return res.status(500).json({
+      success: false,
+      hasGeminiKey: Boolean(process.env.GEMINI_API_KEY),
+      error: err.message || 'Gemini API test failed',
+    });
+  }
+});
+
 // API: Analyze Source Content into Content IR
 app.post('/api/content/analyze', async (req, res) => {
   try {

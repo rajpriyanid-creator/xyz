@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Bot, 
   Sparkles, 
@@ -6,7 +6,12 @@ import {
   Play, 
   CheckCircle2, 
   Layers,
-  ChevronDown
+  ChevronDown,
+  Cpu,
+  X,
+  Zap,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import { ContentSource, CreatorProfile } from '../types';
 
@@ -36,6 +41,41 @@ export const Header: React.FC<HeaderProps> = ({
   isLiveMode,
   setIsLiveMode,
 }) => {
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [isTestingAi, setIsTestingAi] = useState(false);
+  const [aiTestResult, setAiTestResult] = useState<{
+    success?: boolean;
+    hasGeminiKey?: boolean;
+    model?: string;
+    reply?: string;
+    message?: string;
+    error?: string;
+    latencyMs?: number;
+  } | null>(null);
+
+  const testGeminiConnection = async () => {
+    setIsTestingAi(true);
+    setAiTestResult(null);
+    try {
+      const res = await fetch('/api/ai/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: 'Hello Gemini! In 1 brief sentence, confirm that CreatorOS autonomous content intelligence engine is connected.'
+        })
+      });
+      const data = await res.json();
+      setAiTestResult(data);
+    } catch (err: any) {
+      setAiTestResult({
+        success: false,
+        error: err.message || 'Connection error contacting /api/ai/test'
+      });
+    } finally {
+      setIsTestingAi(false);
+    }
+  };
+
   return (
     <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-white/10 bg-[#0A0A0B]/90 px-4 backdrop-blur-md lg:px-8">
       {/* Brand & Active Source Picker */}
@@ -82,6 +122,19 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right Controls: Mode Toggle, ProofFlow Trust Score, Run Action, Profile */}
       <div className="flex items-center gap-4">
+        {/* Test AI Real API Key Button */}
+        <button
+          onClick={() => {
+            setShowAiModal(true);
+            if (!aiTestResult) testGeminiConnection();
+          }}
+          className="flex items-center gap-2 rounded-sm border border-purple-500/30 bg-purple-500/10 px-3 py-1.5 text-xs text-purple-300 transition-all hover:border-purple-500/50 hover:bg-purple-500/20"
+          title="Test real Gemini API Key"
+        >
+          <Cpu className="h-3.5 w-3.5 text-purple-400" />
+          <span className="font-mono text-[11px] font-semibold tracking-wider uppercase">Test AI Key</span>
+        </button>
+
         {/* Output Quality Index / Trust Score Indicator */}
         <button
           onClick={() => setActiveTab('proofflow')}
@@ -135,6 +188,111 @@ export const Header: React.FC<HeaderProps> = ({
           />
         </div>
       </div>
+
+      {/* AI Key & Connectivity Diagnostics Modal */}
+      {showAiModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-md border border-white/20 bg-[#111114] p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-2">
+                <Cpu className="h-5 w-5 text-purple-400" />
+                <h3 className="font-mono text-sm font-bold uppercase tracking-wider text-white">
+                  Gemini AI Model Connection Test
+                </h3>
+              </div>
+              <button 
+                onClick={() => setShowAiModal(false)}
+                className="rounded p-1 text-white/40 hover:bg-white/10 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="my-5 space-y-4">
+              <div className="rounded border border-white/10 bg-black/40 p-4 font-mono text-xs text-white/80">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white/40 uppercase tracking-widest text-[10px]">Target Model</span>
+                  <span className="text-purple-400 font-semibold">models/gemini-3.7-flash</span>
+                </div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white/40 uppercase tracking-widest text-[10px]">Server Route</span>
+                  <span className="text-emerald-400">POST /api/ai/test</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-white/40 uppercase tracking-widest text-[10px]">Authentication</span>
+                  <span className="text-white/60">process.env.GEMINI_API_KEY</span>
+                </div>
+              </div>
+
+              {/* Status Display */}
+              {isTestingAi && (
+                <div className="flex items-center gap-3 rounded border border-purple-500/30 bg-purple-500/10 p-4 text-purple-300">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-400 border-t-transparent" />
+                  <span className="font-mono text-xs">Sending live test prompt to Gemini 3.7 Flash...</span>
+                </div>
+              )}
+
+              {aiTestResult && !isTestingAi && (
+                <div className={`rounded border p-4 text-xs font-mono ${
+                  aiTestResult.success 
+                    ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200'
+                    : 'border-amber-500/40 bg-amber-500/10 text-amber-200'
+                }`}>
+                  <div className="flex items-center gap-2 font-bold mb-2">
+                    {aiTestResult.success ? (
+                      <>
+                        <CheckCircle className="h-4 w-4 text-emerald-400" />
+                        <span className="text-emerald-300">Live AI Connection Verified</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="h-4 w-4 text-amber-400" />
+                        <span className="text-amber-300">Key Not Detected or Needs Configuration</span>
+                      </>
+                    )}
+                  </div>
+
+                  {aiTestResult.reply && (
+                    <div className="mt-2 rounded bg-black/50 p-3 text-[11px] text-white/90 border border-emerald-500/20">
+                      <span className="text-emerald-400 block text-[9px] uppercase tracking-wider mb-1 font-bold">Model Output:</span>
+                      "{aiTestResult.reply}"
+                    </div>
+                  )}
+
+                  {aiTestResult.message && (
+                    <p className="mt-1 text-[11px] text-amber-300/90 leading-relaxed">
+                      {aiTestResult.message}
+                    </p>
+                  )}
+
+                  {aiTestResult.error && (
+                    <p className="mt-1 text-[11px] text-red-300 leading-relaxed">
+                      Error: {aiTestResult.error}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between border-t border-white/10 pt-4">
+              <button
+                onClick={() => setShowAiModal(false)}
+                className="px-4 py-2 text-xs font-mono text-white/60 hover:text-white"
+              >
+                Close
+              </button>
+              <button
+                onClick={testGeminiConnection}
+                disabled={isTestingAi}
+                className="flex items-center gap-2 rounded bg-purple-600 px-4 py-2 text-xs font-semibold text-white hover:bg-purple-500 disabled:opacity-50"
+              >
+                <Zap className="h-3.5 w-3.5" />
+                {isTestingAi ? 'Testing...' : 'Run Test Prompt'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
