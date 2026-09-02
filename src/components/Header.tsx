@@ -51,6 +51,9 @@ export const Header: React.FC<HeaderProps> = ({
     message?: string;
     error?: string;
     latencyMs?: number;
+    fromCache?: boolean;
+    quotaSaved?: boolean;
+    isQuotaExceeded?: boolean;
   } | null>(null);
 
   const testGeminiConnection = async () => {
@@ -61,10 +64,24 @@ export const Header: React.FC<HeaderProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: 'Hello Gemini! In 1 brief sentence, confirm that CreatorOS autonomous content intelligence engine is connected.'
+          prompt: 'Confirm CreatorOS engine connection in 1 short sentence.'
         })
       });
-      const data = await res.json();
+
+      const contentType = res.headers.get('content-type') || '';
+      let data: any;
+
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        data = {
+          success: false,
+          error: res.status === 404
+            ? 'Endpoint /api/ai/test not found. On Vercel, ensure Environment Variables and vercel.json rewrites are deployed.'
+            : text.slice(0, 300) || `Server returned HTTP ${res.status}`
+        };
+      }
       setAiTestResult(data);
     } catch (err: any) {
       setAiTestResult({
@@ -218,9 +235,15 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="text-white/40 uppercase tracking-widest text-[10px]">Server Route</span>
                   <span className="text-emerald-400">POST /api/ai/test</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-2">
                   <span className="text-white/40 uppercase tracking-widest text-[10px]">Authentication</span>
                   <span className="text-white/60">process.env.GEMINI_API_KEY</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-white/40 uppercase tracking-widest text-[10px]">Quota Protection</span>
+                  <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                    <ShieldCheck className="h-3 w-3" /> Active (20 req/min & Caching)
+                  </span>
                 </div>
               </div>
 
@@ -228,7 +251,7 @@ export const Header: React.FC<HeaderProps> = ({
               {isTestingAi && (
                 <div className="flex items-center gap-3 rounded border border-purple-500/30 bg-purple-500/10 p-4 text-purple-300">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-400 border-t-transparent" />
-                  <span className="font-mono text-xs">Sending live test prompt to Gemini 3.7 Flash...</span>
+                  <span className="font-mono text-xs">Sending minimal-token verification prompt to Gemini...</span>
                 </div>
               )}
 
@@ -242,12 +265,16 @@ export const Header: React.FC<HeaderProps> = ({
                     {aiTestResult.success ? (
                       <>
                         <CheckCircle className="h-4 w-4 text-emerald-400" />
-                        <span className="text-emerald-300">Live AI Connection Verified</span>
+                        <span className="text-emerald-300">
+                          Live AI Connection Verified {aiTestResult.fromCache ? '(Cached / 0 Tokens Consumed)' : '(Live ~10 Tokens)'}
+                        </span>
                       </>
                     ) : (
                       <>
                         <AlertCircle className="h-4 w-4 text-amber-400" />
-                        <span className="text-amber-300">Key Not Detected or Needs Configuration</span>
+                        <span className="text-amber-300">
+                          {aiTestResult.isQuotaExceeded ? 'Gemini Quota Limit Reached (429)' : 'Key Not Detected or Serverless Route Unreachable'}
+                        </span>
                       </>
                     )}
                   </div>
@@ -266,9 +293,10 @@ export const Header: React.FC<HeaderProps> = ({
                   )}
 
                   {aiTestResult.error && (
-                    <p className="mt-1 text-[11px] text-red-300 leading-relaxed">
-                      Error: {aiTestResult.error}
-                    </p>
+                    <div className="mt-2 rounded bg-red-950/40 border border-red-500/30 p-2.5 text-[11px] text-red-200 leading-relaxed">
+                      <span className="font-bold text-red-400 block mb-0.5">Details:</span>
+                      {aiTestResult.error}
+                    </div>
                   )}
                 </div>
               )}
