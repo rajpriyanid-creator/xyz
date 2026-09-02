@@ -2,15 +2,48 @@ import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
+import rateLimit from 'express-rate-limit';
 
-const app = express();
+export const app = express();
 const PORT = 3000;
+
+// Trust proxy for accurate IP determination in Cloud Run / Vercel / Nginx environments
+app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '20mb' }));
 
+// General API Rate Limiter: 120 requests per 10 minutes per IP
+export const generalApiLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 120, // Limit each IP to 120 requests per `window`
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: {
+    success: false,
+    error: 'Too many requests from this IP. Please try again after a few minutes.',
+    code: 'RATE_LIMIT_EXCEEDED'
+  }
+});
+
+// AI Generation Rate Limiter: 35 requests per 1 minute per IP
+export const aiApiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 35, // Limit each IP to 35 AI generation requests per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: 'AI request frequency limit reached. Please wait a moment before generating more assets.',
+    code: 'AI_RATE_LIMIT_EXCEEDED'
+  }
+});
+
+// Apply general limiter to all /api routes
+app.use('/api/', generalApiLimiter);
+
 // Lazy Gemini client helper
 let aiClient: GoogleGenAI | null = null;
-function getAI(): GoogleGenAI | null {
+export function getAI(): GoogleGenAI | null {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
   if (!aiClient) {
@@ -32,12 +65,13 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     service: 'CreatorOS Autonomous Engine',
     hasGeminiKey: Boolean(process.env.GEMINI_API_KEY),
+    rateLimitingEnabled: true,
     timestamp: new Date().toISOString()
   });
 });
 
 // API: Live AI Connectivity & Key Validation Test
-app.post('/api/ai/test', async (req, res) => {
+app.post('/api/ai/test', aiApiLimiter, async (req, res) => {
   try {
     const ai = getAI();
     if (!ai) {
@@ -75,7 +109,7 @@ app.post('/api/ai/test', async (req, res) => {
 });
 
 // API: Analyze Source Content into Content IR
-app.post('/api/content/analyze', async (req, res) => {
+app.post('/api/content/analyze', aiApiLimiter, async (req, res) => {
   try {
     const { rawText, title, speakerName } = req.body;
     if (!rawText) {
@@ -193,7 +227,7 @@ Respond ONLY with a valid JSON object matching this schema:
 });
 
 // API: Plan Autonomous Workflow
-app.post('/api/workflows/plan', async (req, res) => {
+app.post('/api/workflows/plan', aiApiLimiter, async (req, res) => {
   try {
     const { contentIR, creatorProfile } = req.body;
     const ai = getAI();
@@ -248,7 +282,7 @@ Respond with JSON matching this structure:
 });
 
 // API: Compile Multi-Platform Assets
-app.post('/api/generate/compile', async (req, res) => {
+app.post('/api/generate/compile', aiApiLimiter, async (req, res) => {
   try {
     const { contentIR, platform, creatorProfile } = req.body;
     const ai = getAI();
@@ -285,7 +319,7 @@ Respond ONLY with JSON appropriate for the requested platform.`;
 });
 
 // API: ProofFlow Audit & Repair
-app.post('/api/verify/fix', async (req, res) => {
+app.post('/api/verify/fix', aiApiLimiter, async (req, res) => {
   try {
     const { claim, originalSpanText, issueType } = req.body;
     const ai = getAI();
@@ -329,7 +363,7 @@ Respond ONLY with JSON:
 });
 
 // API: Strategic Next-Action Feedback
-app.post('/api/next-actions', async (req, res) => {
+app.post('/api/next-actions', aiApiLimiter, async (req, res) => {
   try {
     const { analytics, creatorProfile } = req.body;
     const ai = getAI();
@@ -376,6 +410,11 @@ Respond ONLY with JSON:
 });
 
 async function startServer() {
+  // If running in Vercel serverless environment, skip manual port binding
+  if (process.env.VERCEL) {
+    return;
+  }
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -396,3 +435,5 @@ async function startServer() {
 }
 
 startServer();
+
+export default app;
