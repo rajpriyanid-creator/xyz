@@ -55,6 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
     fromCache?: boolean;
     quotaSaved?: boolean;
     isQuotaExceeded?: boolean;
+    isHighDemand?: boolean;
   } | null>(null);
 
   const handleSaveKey = (key: string) => {
@@ -310,7 +311,11 @@ export const Header: React.FC<HeaderProps> = ({
                       <>
                         <AlertCircle className="h-4 w-4 text-amber-400" />
                         <span className="text-amber-300">
-                          {aiTestResult.isQuotaExceeded ? 'Gemini Quota Limit Reached (429)' : 'Key Not Detected or Serverless Route Unreachable'}
+                          {aiTestResult.isHighDemand 
+                            ? 'Google Cloud High Demand (503) — Automatic Fallback Active' 
+                            : aiTestResult.isQuotaExceeded 
+                            ? 'Gemini Quota Limit Reached (429)' 
+                            : 'Key Not Detected or Serverless Route Unreachable'}
                         </span>
                       </>
                     )}
