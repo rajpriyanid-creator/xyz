@@ -42,6 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
   setIsLiveMode,
 }) => {
   const [showAiModal, setShowAiModal] = useState(false);
+  const [customKey, setCustomKey] = useState(() => localStorage.getItem('creatoros_gemini_key') || '');
   const [isTestingAi, setIsTestingAi] = useState(false);
   const [aiTestResult, setAiTestResult] = useState<{
     success?: boolean;
@@ -56,13 +57,27 @@ export const Header: React.FC<HeaderProps> = ({
     isQuotaExceeded?: boolean;
   } | null>(null);
 
+  const handleSaveKey = (key: string) => {
+    setCustomKey(key);
+    if (key.trim()) {
+      localStorage.setItem('creatoros_gemini_key', key.trim());
+    } else {
+      localStorage.removeItem('creatoros_gemini_key');
+    }
+  };
+
   const testGeminiConnection = async () => {
     setIsTestingAi(true);
     setAiTestResult(null);
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (customKey.trim()) {
+        headers['x-gemini-key'] = customKey.trim();
+      }
+
       const res = await fetch('/api/ai/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           prompt: 'Confirm CreatorOS engine connection in 1 short sentence.'
         })
@@ -78,7 +93,7 @@ export const Header: React.FC<HeaderProps> = ({
         data = {
           success: false,
           error: res.status === 404
-            ? 'Endpoint /api/ai/test not found. On Vercel, ensure Environment Variables and vercel.json rewrites are deployed.'
+            ? 'Endpoint /api/ai/test not found. Ensure Vercel deployment includes api/index.ts.'
             : text.slice(0, 300) || `Server returned HTTP ${res.status}`
         };
       }
@@ -245,6 +260,28 @@ export const Header: React.FC<HeaderProps> = ({
                     <ShieldCheck className="h-3 w-3" /> Active (20 req/min & Caching)
                   </span>
                 </div>
+              </div>
+
+              {/* Optional Custom Key Input for Direct Testing without redeployment */}
+              <div className="rounded border border-white/10 bg-[#0c0c0f] p-3.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-white/60">
+                    Direct API Key Override (Optional)
+                  </label>
+                  {customKey && (
+                    <span className="text-[10px] font-mono text-emerald-400">Saved for session</span>
+                  )}
+                </div>
+                <input
+                  type="password"
+                  value={customKey}
+                  onChange={(e) => handleSaveKey(e.target.value)}
+                  placeholder="AIzaSy... (Paste Gemini Key to test directly)"
+                  className="w-full rounded border border-white/10 bg-black/60 px-3 py-1.5 font-mono text-xs text-white placeholder-white/20 focus:border-purple-500 focus:outline-none"
+                />
+                <p className="text-[10px] text-white/40 leading-relaxed">
+                  Tip: On Vercel, set <code className="text-purple-300">GEMINI_API_KEY</code> in <em>Project Settings → Environment Variables</em> for zero-config global authentication.
+                </p>
               </div>
 
               {/* Status Display */}
